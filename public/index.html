@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <meta name="apple-mobile-web-app-title" content="Health Log">
+
+  <title>Health Log</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+
+      --bg: #f5f0e8; --surface: #ffffff; --border: #e2d8ca;
+
+      --accent: #4f46e5; --accent-l: #4338ca;
+
+      --text: #111118; --muted: #4b5563; --dim: #6b7280;
+
+      --green: #15803d; --yellow: #b45309; --red: #dc2626;
+
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
+
+    body { display: flex; flex-direction: column; }
+
+
+
+    /* ── Header ── */
+
+    #header {
+
+      flex-shrink: 0;
+
+      display: flex; justify-content: space-between; align-items: center;
+
+      padding: 14px 16px 10px;
+
+      border-bottom: 1px solid var(--border);
+
+    }
+
+    #header .title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+
+    #header .sub { font-size: 9px; color: var(--dim); letter-spacing: 0.1em; margin-top: 2px; }
+
+    #header-btns { display: flex; gap: 6px; }
+
+    .hdr-btn {
+
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+
+      color: var(--muted); font-family: inherit; font-size: 10px; padding: 6px 10px; cursor: pointer;
+
+      letter-spacing: 0.05em;
+
+    }
+
+    .hdr-btn:active { opacity: 0.7; }
+
+
+
+    /* ── Entries list ── */
+
+    #entries {
+
+      flex: 1; overflow-y: auto; padding: 12px 16px;
+
+      display: flex; flex-direction: column; gap: 8px;
+
+      -webkit-overflow-scrolling: touch;
+
+    }
+
+
+
+    .entry {
+
+      background: var(--surface); border: 1px solid var(--border);
+
+      border-radius: 10px; padding: 11px 13px;
+
+    }
+
+    .entry.today { border-color: var(--accent); }
+
+    .entry-header {
+
+      display: flex; justify-content: space-between; align-items: flex-start;
+
+      margin-bottom: 5px;
+
+    }
+
+    .entry-date {
+
+      font-size: 11px; font-weight: 500; color: var(--accent-l);
+
+      display: flex; align-items: center; gap: 8px;
+
+    }
+
+    .today-badge {
+
+      font-size: 8px; background: var(--accent); color: #fff;
+
+      padding: 1px 5px; border-radius: 3px; letter-spacing: 0.08em;
+
+    }
+
+    .entry-actions { display: flex; gap: 4px; }
+
+    .act-btn {
+
+      background: var(--border); border: none; border-radius: 4px;
+
+      color: var(--muted); font-family: inherit; font-size: 9px;
+
+      padding: 3px 8px; cursor: pointer; letter-spacing: 0.05em;
+
+    }
+
+    .act-btn:active { opacity: 0.7; }
+
+    .act-btn.del { color: var(--red); }
+
+    .entry-stats {
+
+      display: flex; gap: 12px; margin-bottom: 5px; flex-wrap: wrap;
+
+    }
+
+    .stat { font-size: 11px; }
+
+    .stat.weight { color: #94a3b8; }
+
+    .stat.kcal-green { color: var(--green); }
+
+    .stat.kcal-yellow { color: var(--yellow); }
+
+    .stat.kcal-red { color: var(--red); }
+
+    .stat.kcal-none { color: var(--dim); }
+
+    .entry-details { font-size: 10px; color: var(--dim); line-height: 1.5; }
+    .entry-exercise { font-size: 10px; color: var(--accent-l); line-height: 1.5; margin-top: 2px; }
+    .stat.burned { color: #15803d; }
+
+
+
+    /* ── Edit form (inline) ── */
+
+    .edit-form {
+
+      border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;
+
+      display: flex; flex-direction: column; gap: 8px;
+
+    }
+
+    .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .edit-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+    .field-label { font-size: 9px; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 3px; }
+
+    .field-input {
+
+      background: #faf7f2; border: 1px solid var(--border); border-radius: 5px;
+
+      padding: 8px 10px; color: var(--text); font-family: inherit; font-size: 12px;
+
+      outline: none; width: 100%;
+
+    }
+
+    .field-input:focus { border-color: var(--accent); }
+
+    .edit-details { resize: vertical; line-height: 1.5; min-height: 60px; }
+
+    .edit-save-btn {
+
+      background: var(--accent); color: #fff; border: none; border-radius: 6px;
+
+      font-family: inherit; font-size: 12px; padding: 10px; cursor: pointer;
+
+      letter-spacing: 0.05em; font-weight: 500;
+
+    }
+
+    .edit-cancel-btn {
+
+      background: var(--border); color: var(--muted); border: none; border-radius: 6px;
+
+      font-family: inherit; font-size: 12px; padding: 10px; cursor: pointer;
+
+    }
+
+    .edit-row-btns { display: flex; gap: 8px; }
+
+    .edit-row-btns .edit-save-btn, .edit-row-btns .edit-cancel-btn { flex: 1; }
+
+
+
+    /* ── Toast ── */
+
+    #toast {
+
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-60px);
+
+      background: #0a1f12; border: 1px solid #166534; border-radius: 8px;
+
+      color: var(--green); font-size: 11px; padding: 8px 16px; z-index: 100;
+
+      transition: transform 0.25s ease; pointer-events: none; white-space: nowrap;
+
+    }
+
+    #toast.warn { background: #2a1f0a; border-color: #92400e; color: var(--yellow); }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+
+
+    /* ── Input bar ── */
+
+    #input-bar {
+
+      flex-shrink: 0;
+
+      border-top: 1px solid var(--border); padding: 12px 16px;
+
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+
+      background: var(--bg);
+
+    }
+
+    #log-input {
+
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+
+      padding: 11px 13px; color: var(--text); font-family: inherit; font-size: 14px;
+
+      outline: none; width: 100%; resize: none; line-height: 1.5; min-height: 60px;
+
+      max-height: 130px; overflow-y: auto; transition: border-color 0.15s;
+
+    }
+
+    #log-input:focus { border-color: var(--accent); }
+
+    #log-input::placeholder { color: var(--dim); }
+
+    #log-btn {
+
+      margin-top: 8px; width: 100%; background: var(--accent); color: #fff;
+
+      border: none; border-radius: 8px; font-family: inherit; font-size: 13px;
+
+      font-weight: 500; padding: 13px; cursor: pointer; letter-spacing: 0.06em;
+
+      transition: background 0.15s;
+
+    }
+
+    #log-btn:disabled { background: #3730a3; opacity: 0.7; }
+
+    #log-btn:active:not(:disabled) { background: #3730a3; }
+
+
+
+    /* ── Preview panel ── */
+
+    #preview {
+
+      display: none; background: #eef2ff; border: 1px solid var(--accent);
+
+      border-radius: 8px; padding: 12px 13px; margin-bottom: 10px;
+
+    }
+
+    #preview.visible { display: block; }
+
+    #preview .preview-label { font-size: 9px; color: var(--accent-l); letter-spacing: 0.1em; margin-bottom: 8px; }
+
+    #preview .preview-fields { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+
+    #preview .preview-row { display: flex; gap: 8px; }
+
+    #preview .preview-key { color: var(--dim); width: 80px; flex-shrink: 0; }
+
+    #preview .preview-val { color: var(--text); }
+
+    #preview-refine { display: flex; gap: 6px; margin-top: 10px; }
+    #refine-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; color: var(--text); font-family: inherit; font-size: 12px; outline: none; }
+    #refine-input:focus { border-color: var(--accent); }
+    #refine-btn { background: var(--border); border: none; border-radius: 6px; color: var(--muted); font-family: inherit; font-size: 14px; padding: 7px 12px; cursor: pointer; }
+    #refine-btn:disabled { opacity: 0.5; }
+    #preview-btns { display: flex; gap: 8px; margin-top: 10px; }
+
+    #preview-confirm { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-family: inherit; font-size: 12px; padding: 10px; cursor: pointer; }
+
+    #preview-edit { flex: 1; background: var(--border); color: var(--muted); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; padding: 10px; cursor: pointer; }
+
+    #preview-cancel { background: none; border: none; color: var(--dim); font-family: inherit; font-size: 10px; padding: 6px 10px; cursor: pointer; }
+
+
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@800&display=swap');
+
+    /* ── Charts ── */
+    #chart-panel { display: none; flex-direction: column; gap: 16px; flex: 1; overflow-y: auto; padding: 12px 16px; -webkit-overflow-scrolling: touch; }
+    .chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 13px; }
+    .chart-title { font-size: 10px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .chart-canvas-wrap { position: relative; height: 180px; }
+    .chart-target-badge { font-size: 9px; background: var(--border); color: var(--muted); padding: 2px 6px; border-radius: 4px; }
+    .rolling-avg-row { font-size: 11px; color: var(--muted); text-align: center; padding: 4px 0 8px; }
+    .rolling-avg-row strong { color: var(--text); }
+
+    /* ── Settings modal ── */
+    #settings-modal { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; }
+    #settings-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); }
+    #settings-box { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 280px; display: flex; flex-direction: column; gap: 10px; }
+    .settings-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    #settings-btns { display: flex; gap: 8px; margin-top: 4px; }
+
+  </style>
+
+</head>
+
+<body>
+
+
+
+<div id="header">
+
+  <div>
+
+    <div class="title">HEALTH LOG</div>
+
+    <div class="sub" id="header-sub">LARA · loading…</div>
+
+  </div>
+
+  <div id="header-btns">
+
+    <button class="hdr-btn" onclick="exportCSV()">↓ CSV</button>
+    <button class="hdr-btn" onclick="document.getElementById('csv-import-input').click()">↑ CSV</button>
+    <input type="file" id="csv-import-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+    <button class="hdr-btn" id="chart-toggle-btn" onclick="toggleCharts()">⌁ Charts</button>
+    <button class="hdr-btn" onclick="openSettings()">⚙</button>
+
+  </div>
+
+</div>
+
+
+
+<div id="entries"></div>
+
+<div id="chart-panel">
+  <div class="chart-section">
+    <div class="chart-title">WEIGHT</div>
+    <div class="rolling-avg-row" id="rolling-avg-row"></div>
+    <div class="chart-canvas-wrap"><canvas id="chart-weight"></canvas></div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-title">CALORIES <span id="kcal-target-badge" class="chart-target-badge"></span></div>
+    <div class="chart-canvas-wrap"><canvas id="chart-kcal"></canvas></div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-title">EXERCISE BURNED</div>
+    <div class="chart-canvas-wrap"><canvas id="chart-exercise"></canvas></div>
+  </div>
+</div>
+
+<div id="input-bar">
+
+  <div id="preview">
+
+    <div class="preview-label">▶ PARSED — CONFIRM?</div>
+
+    <div class="preview-fields" id="preview-fields"></div>
+
+    <div id="preview-refine">
+      <input id="refine-input" type="text" placeholder="Correct anything…" autocomplete="off"
+        onkeydown="if(event.key==='Enter') submitRefinement()">
+      <button id="refine-btn" onclick="submitRefinement()">→</button>
+    </div>
+
+    <div id="preview-btns">
+
+      <button id="preview-confirm" onclick="confirmSave()">SAVE</button>
+
+      <button id="preview-edit" onclick="editPreview()">EDIT</button>
+
+      <button id="preview-cancel" onclick="cancelPreview()">✕</button>
+
+    </div>
+
+  </div>
+
+  <textarea id="log-input" rows="2"
+
+    placeholder="120.2 this morning. Eggs, toast, flat white for breakfast. Chicken rice lunch. Salad dinner. 3 hazies."></textarea>
+
+  <button id="log-btn" onclick="submitLog()">LOG</button>
+
+</div>
+
+
+
+<div id="settings-modal">
+  <div id="settings-overlay" onclick="closeSettings()"></div>
+  <div id="settings-box">
+    <div class="settings-title">Settings</div>
+    <div>
+      <div class="field-label">DAILY KCAL TARGET</div>
+      <input class="field-input" type="number" id="settings-kcal-target" placeholder="2000">
+    </div>
+    <div id="settings-btns">
+      <button class="edit-save-btn" onclick="saveSettings()">Save</button>
+      <button class="edit-cancel-btn" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+
+
+<script>
+
+'use strict';
+
+
+
+let allEntries = [];
+
+let pendingEntry = null;   // parsed but not yet saved
+
+let editingDate = null;    // date of entry currently being inline-edited
+
+
+
+const today = new Date().toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD in local timezone
+
+
+
+// ── Data loading ─────────────────────────────────────────────────────────────
+
+async function load() {
+
+  try {
+
+    const res = await fetch('/api/entries');
+
+    allEntries = await res.json();
+
+    renderAll();
+
+    updateHeaderSub();
+
+  } catch (e) {
+
+    showToast('Could not load entries', 'warn');
+
+  }
+
+}
+
+
+
+function updateHeaderSub() {
+
+  const d = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const todayEntry = allEntries.find(r => r.date === today);
+
+  const sub = `LARA · ${d}${todayEntry ? ' · today logged' : ''}`;
+
+  document.getElementById('header-sub').textContent = sub;
+
+}
+
+
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+
+function fmtDate(dateStr) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [, m, d] = dateStr.split('-');
+  return d + '-' + months[parseInt(m, 10) - 1];
+}
+
+function kcalClass(v) {
+
+  if (v == null) return 'kcal-none';
+
+  if (v >= 3500) return 'kcal-red';
+
+  if (v >= 2700) return 'kcal-yellow';
+
+  return 'kcal-green';
+
+}
+
+
+
+function renderAll() {
+
+  const list = document.getElementById('entries');
+
+  const recent = [...allEntries].reverse().slice(0, 30);
+
+  list.innerHTML = '';
+
+  for (const r of recent) {
+
+    list.appendChild(buildEntryEl(r));
+
+  }
+
+}
+
+
+
+function buildEntryEl(r) {
+
+  const isToday = r.date === today;
+
+  const div = document.createElement('div');
+
+  div.className = 'entry' + (isToday ? ' today' : '');
+
+  div.dataset.date = r.date;
+
+
+
+  const w = r.weight_am != null ? r.weight_am + ' kg AM' : r.weight_pm != null ? r.weight_pm + ' kg PM' : null;
+
+
+
+  div.innerHTML = `
+
+    <div class="entry-header">
+
+      <div class="entry-date">
+
+        ${fmtDate(r.date)}
+
+        ${isToday ? '<span class="today-badge">TODAY</span>' : ''}
+
+      </div>
+
+      <div class="entry-actions">
+
+        <button class="act-btn" onclick="openEdit('${r.date}')">edit</button>
+
+        <button class="act-btn del" onclick="deleteEntry('${r.date}')">del</button>
+
+      </div>
+
+    </div>
+
+    <div class="entry-stats">
+
+      ${w ? `<span class="stat weight">${w}</span>` : ''}
+
+      <span class="stat ${kcalClass(r.kcal)}">${r.kcal != null ? r.kcal.toLocaleString() + ' kcal' : '— kcal'}</span>
+
+      ${r.kcal_burned != null ? `<span class="stat burned">-${r.kcal_burned} burned</span>` : ''}
+
+    </div>
+
+    <div class="entry-details">${r.details || ''}</div>
+
+    ${r.exercise ? `<div class="entry-exercise">${r.exercise}</div>` : ''}
+
+    <div class="edit-form" id="edit-${r.date}" style="display:none">
+
+      <div class="edit-row three">
+
+        <div><div class="field-label">WEIGHT AM</div><input class="field-input" type="number" step="0.1" id="ef-wam-${r.date}" placeholder="120.2" value="${r.weight_am ?? ''}"></div>
+
+        <div><div class="field-label">WEIGHT PM</div><input class="field-input" type="number" step="0.1" id="ef-wpm-${r.date}" placeholder="optional" value="${r.weight_pm ?? ''}"></div>
+
+        <div><div class="field-label">KCAL</div><input class="field-input" type="number" id="ef-kcal-${r.date}" placeholder="2600" value="${r.kcal ?? ''}"></div>
+
+      </div>
+
+      <div><div class="field-label">DETAILS</div><textarea class="field-input edit-details" id="ef-det-${r.date}">${r.details ?? ''}</textarea></div>
+
+      <div class="edit-row">
+        <div><div class="field-label">EXERCISE</div><textarea class="field-input edit-details" id="ef-ex-${r.date}">${r.exercise ?? ''}</textarea></div>
+        <div><div class="field-label">KCAL BURNED</div><input class="field-input" type="number" id="ef-burn-${r.date}" placeholder="350" value="${r.kcal_burned ?? ''}"></div>
+      </div>
+
+      <div class="edit-row-btns">
+
+        <button class="edit-save-btn" onclick="saveEdit('${r.date}')">SAVE</button>
+
+        <button class="edit-cancel-btn" onclick="closeEdit('${r.date}')">Cancel</button>
+
+      </div>
+
+    </div>
+
+  `;
+
+  return div;
+
+}
+
+
+
+// ── Inline edit ───────────────────────────────────────────────────────────────
+
+function openEdit(date) {
+
+  if (editingDate && editingDate !== date) closeEdit(editingDate);
+
+  editingDate = date;
+
+  document.getElementById('edit-' + date).style.display = 'flex';
+
+  document.getElementById('ef-det-' + date).focus();
+
+}
+
+
+
+function closeEdit(date) {
+
+  const el = document.getElementById('edit-' + date);
+
+  if (el) el.style.display = 'none';
+
+  if (editingDate === date) editingDate = null;
+
+}
+
+
+
+async function saveEdit(date) {
+
+  const btn = document.querySelector(`#edit-${date} .edit-save-btn`);
+
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+
+    const body = {
+
+      weight_am: document.getElementById('ef-wam-' + date).value,
+
+      weight_pm: document.getElementById('ef-wpm-' + date).value,
+
+      kcal: document.getElementById('ef-kcal-' + date).value,
+
+      details: document.getElementById('ef-det-' + date).value,
+
+      exercise: document.getElementById('ef-ex-' + date).value,
+
+      kcal_burned: document.getElementById('ef-burn-' + date).value,
+
+    };
+
+    const res = await fetch('/api/entries/' + date, {
+
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+      const idx = allEntries.findIndex(r => r.date === date);
+
+      if (idx >= 0) allEntries[idx] = data.entry;
+
+      renderAll();
+
+      showToast('Updated');
+
+    } else {
+
+      showToast(data.error || 'Save failed', 'warn');
+
+      btn.textContent = 'SAVE'; btn.disabled = false;
+
+    }
+
+  } catch (e) {
+
+    showToast('Error: ' + e.message, 'warn');
+
+    btn.textContent = 'SAVE'; btn.disabled = false;
+
+  }
+
+}
+
+
+
+async function deleteEntry(date) {
+
+  if (!confirm('Delete ' + fmtDate(date) + '?')) return;
+
+  try {
+
+    await fetch('/api/entries/' + date, { method: 'DELETE' });
+
+    allEntries = allEntries.filter(r => r.date !== date);
+
+    renderAll();
+
+    showToast('Deleted');
+
+  } catch (e) {
+
+    showToast('Delete failed', 'warn');
+
+  }
+
+}
+
+
+
+// ── Log input ─────────────────────────────────────────────────────────────────
+
+async function submitLog() {
+
+  const text = document.getElementById('log-input').value.trim();
+
+  if (!text) return;
+
+
+
+  const btn = document.getElementById('log-btn');
+
+  btn.disabled = true; btn.textContent = 'Parsing…';
+
+
+
+  try {
+
+    const res = await fetch('/api/parse', {
+
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, today: new Date().toLocaleDateString('en-CA') }),
+
+    });
+
+    pendingEntry = await res.json();
+
+    showPreview(pendingEntry);
+
+  } catch (e) {
+
+    showToast('Parse failed: ' + e.message, 'warn');
+
+  } finally {
+
+    btn.disabled = false; btn.textContent = 'LOG';
+
+  }
+
+}
+
+
+
+function showPreview(entry) {
+
+  const existing = allEntries.find(r => r.date === entry.date);
+
+  const isAdd = !!existing;
+
+  const w = entry.weight_am != null ? entry.weight_am + ' kg (AM)'
+
+    : entry.weight_pm != null ? entry.weight_pm + ' kg (PM)' : '—';
+
+  const totalKcal = existing && (entry.kcal != null || existing.kcal != null)
+
+    ? (existing.kcal ?? 0) + (entry.kcal ?? 0) : null;
+
+  const mergeNote = isAdd ? `
+
+    <div class="preview-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+
+      <span class="preview-key" style="color:var(--accent-l)">day total</span>
+
+      <span class="preview-val">${existing.kcal ?? '?'} + ${entry.kcal ?? '?'} = ${totalKcal ?? '?'} kcal</span>
+
+    </div>` : '';
+
+  document.getElementById('preview-fields').innerHTML = `
+
+    <div class="preview-row"><span class="preview-key">date</span><span class="preview-val">${fmtDate(entry.date)}</span></div>
+
+    <div class="preview-row"><span class="preview-key">weight</span><span class="preview-val">${w}</span></div>
+
+    <div class="preview-row"><span class="preview-key">kcal</span><span class="preview-val">${entry.kcal ?? '—'}</span></div>
+
+    <div class="preview-row"><span class="preview-key">food</span><span class="preview-val">${entry.details || '—'}</span></div>
+
+    ${entry.exercise ? `<div class="preview-row"><span class="preview-key">exercise</span><span class="preview-val">${entry.exercise}</span></div>` : ''}
+
+    ${entry.kcal_burned != null ? `<div class="preview-row"><span class="preview-key">burned</span><span class="preview-val">${entry.kcal_burned} kcal</span></div>` : ''}
+
+    ${mergeNote}
+
+  `;
+
+  document.querySelector('#preview .preview-label').textContent =
+
+    isAdd ? `▶ ADDING TO ${fmtDate(entry.date)} — CONFIRM?` : '▶ PARSED — CONFIRM?';
+
+  document.getElementById('preview').classList.add('visible');
+
+}
+
+
+
+async function submitRefinement() {
+  const input = document.getElementById('refine-input');
+  const btn = document.getElementById('refine-btn');
+  const instruction = input.value.trim();
+  if (!instruction || !pendingEntry) return;
+
+  btn.textContent = '…'; btn.disabled = true; input.disabled = true;
+
+  try {
+    const res = await fetch('/api/refine', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry: pendingEntry, instruction }),
+    });
+    const refined = await res.json();
+    if (refined.error) { showToast(refined.error, 'warn'); }
+    else { pendingEntry = refined; showPreview(pendingEntry); input.value = ''; }
+  } catch (e) {
+    showToast('Refine failed: ' + e.message, 'warn');
+  } finally {
+    btn.textContent = '→'; btn.disabled = false; input.disabled = false; input.focus();
+  }
+}
+
+function cancelPreview() {
+
+  pendingEntry = null;
+
+  document.getElementById('preview').classList.remove('visible');
+
+}
+
+
+
+function editPreview() {
+
+  // Fill the input back with date and details for manual editing
+
+  if (!pendingEntry) return;
+
+  const t = document.getElementById('log-input');
+
+  const parts = [];
+
+  if (pendingEntry.weight_am) parts.push(pendingEntry.weight_am + ' kg AM');
+
+  if (pendingEntry.weight_pm) parts.push(pendingEntry.weight_pm + ' kg PM');
+
+  if (pendingEntry.kcal) parts.push(pendingEntry.kcal + ' kcal');
+
+  if (pendingEntry.details) parts.push(pendingEntry.details);
+
+  t.value = parts.join('. ');
+
+  cancelPreview();
+
+  t.focus();
+
+}
+
+
+
+async function confirmSave() {
+
+  if (!pendingEntry) return;
+
+  const btn = document.getElementById('preview-confirm');
+
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+
+    const res = await fetch('/api/log', {
+
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+
+      body: JSON.stringify({ entry: pendingEntry }),
+
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+      const idx = allEntries.findIndex(r => r.date === data.entry.date);
+
+      if (idx >= 0) allEntries[idx] = data.entry;
+
+      else { allEntries.push(data.entry); allEntries.sort((a, b) => a.date.localeCompare(b.date)); }
+
+      document.getElementById('log-input').value = '';
+
+      cancelPreview();
+
+      renderAll();
+
+      updateHeaderSub();
+
+      showToast('Saved ✓');
+
+    } else {
+
+      showToast(data.error || 'Save failed', 'warn');
+
+    }
+
+  } catch (e) {
+
+    showToast('Error: ' + e.message, 'warn');
+
+  } finally {
+
+    btn.textContent = 'SAVE'; btn.disabled = false;
+
+  }
+
+}
+
+
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function exportCSV() {
+
+  window.location.href = '/api/export.csv';
+
+}
+
+
+
+let toastTimer;
+
+function showToast(msg, type = 'ok') {
+
+  const t = document.getElementById('toast');
+
+  t.textContent = msg;
+
+  t.className = (type === 'warn' ? 'warn' : '') + ' show';
+
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+
+}
+
+
+
+// Enter key submits (Shift+Enter = newline)
+
+document.getElementById('log-input').addEventListener('keydown', e => {
+
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitLog(); }
+
+});
+
+
+
+// ── CSV Import ────────────────────────────────────────────────────────────────
+
+function parseCSVRow(line) {
+  const fields = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else { inQ = !inQ; }
+    } else if (line[i] === ',' && !inQ) {
+      fields.push(cur); cur = '';
+    } else { cur += line[i]; }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+async function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = ''; // reset so same file can be re-imported if needed
+
+  const text = await file.text();
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) { showToast('CSV appears empty', 'warn'); return; }
+
+  // Skip header row
+  const entries = [];
+  for (let i = 1; i < lines.length; i++) {
+    const [date, weight_am, weight_pm, kcal, details, exercise, kcal_burned] = parseCSVRow(lines[i]);
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) continue;
+    entries.push({
+      date: date.trim(),
+      weight_am: weight_am ? parseFloat(weight_am) || null : null,
+      weight_pm: weight_pm ? parseFloat(weight_pm) || null : null,
+      kcal: kcal ? parseInt(kcal) || null : null,
+      details: details ? details.trim() : '',
+      exercise: exercise ? exercise.trim() || null : null,
+      kcal_burned: kcal_burned ? parseInt(kcal_burned) || null : null,
+    });
+  }
+
+  if (!entries.length) { showToast('No valid rows found', 'warn'); return; }
+
+  try {
+    const res = await fetch('/api/import', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      await load();
+      showToast(`Imported ${data.imported} entries`);
+    } else {
+      showToast(data.error || 'Import failed', 'warn');
+    }
+  } catch (e) {
+    showToast('Import failed: ' + e.message, 'warn');
+  }
+}
+
+
+
+// ── Charts & Settings ─────────────────────────────────────────────────────────
+
+let chartsVisible = false;
+let chartInstances = {};
+
+function getKcalTarget() {
+  return parseInt(localStorage.getItem('kcalTarget') || '2000', 10);
+}
+
+function openSettings() {
+  document.getElementById('settings-kcal-target').value = getKcalTarget();
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none';
+}
+
+function saveSettings() {
+  const val = parseInt(document.getElementById('settings-kcal-target').value, 10);
+  if (!isNaN(val) && val > 0) {
+    localStorage.setItem('kcalTarget', val);
+    showToast('Settings saved');
+    closeSettings();
+    if (chartsVisible) renderCharts();
+  } else {
+    showToast('Enter a valid number', 'warn');
+  }
+}
+
+function toggleCharts() {
+  chartsVisible = !chartsVisible;
+  const panel = document.getElementById('chart-panel');
+  const entries = document.getElementById('entries');
+  const btn = document.getElementById('chart-toggle-btn');
+  if (chartsVisible) {
+    panel.style.display = 'flex';
+    entries.style.display = 'none';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--accent)';
+    renderCharts();
+  } else {
+    panel.style.display = 'none';
+    entries.style.display = 'flex';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
+function getRollingAvg() {
+  const withWeight = allEntries.filter(r => r.weight_am != null || r.weight_pm != null);
+  const last14 = withWeight.slice(-14);
+  if (last14.length === 0) return null;
+  const sum = last14.reduce((acc, r) => {
+    const vals = [r.weight_am, r.weight_pm].filter(v => v != null);
+    return acc + Math.min(...vals);
+  }, 0);
+  return Math.round((sum / last14.length) * 10) / 10;
+}
+
+function kcalColor(val, target) {
+  if (val == null) return 'rgba(0,0,0,0)';
+  if (val <= target) return '#15803d';
+  if (val <= target * 1.2) return '#b45309';
+  return '#dc2626';
+}
+
+function destroyChart(key) {
+  if (chartInstances[key]) {
+    chartInstances[key].destroy();
+    delete chartInstances[key];
+  }
+}
+
+function chartOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: '#6b7280', font: { size: 9 }, maxRotation: 45 },
+        grid: { color: '#e2d8ca' }
+      },
+      y: {
+        ticks: { color: '#6b7280', font: { size: 9 } },
+        grid: { color: '#e2d8ca' }
+      }
+    }
+  };
+}
+
+function renderCharts() {
+  const target = getKcalTarget();
+  const recent = [...allEntries].slice(-30);
+  const labels = recent.map(r => fmtDate(r.date));
+
+  document.getElementById('kcal-target-badge').textContent = 'target: ' + target.toLocaleString() + ' kcal';
+  const avg = getRollingAvg();
+  document.getElementById('rolling-avg-row').innerHTML =
+    avg !== null ? `14-day rolling avg: <strong>${avg} kg</strong>` : 'Not enough data for rolling average';
+
+  // Weight chart
+  destroyChart('weight');
+  const weightData = recent.map(r => {
+    const vals = [r.weight_am, r.weight_pm].filter(v => v != null);
+    return vals.length ? Math.min(...vals) : null;
+  });
+  const wopts = chartOptions();
+  chartInstances.weight = new Chart(document.getElementById('chart-weight'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: weightData,
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79,70,229,0.08)',
+        pointRadius: 3,
+        pointBackgroundColor: '#4f46e5',
+        tension: 0.3,
+        fill: true,
+        spanGaps: true
+      }]
+    },
+    options: wopts
+  });
+
+  // Kcal chart
+  destroyChart('kcal');
+  const kcalData = recent.map(r => r.kcal ?? null);
+  const kcalColors = kcalData.map(v => kcalColor(v, target));
+  const kopts = chartOptions();
+  kopts.scales.y.beginAtZero = true;
+  chartInstances.kcal = new Chart(document.getElementById('chart-kcal'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { data: kcalData, backgroundColor: kcalColors, borderRadius: 3 },
+        {
+          data: recent.map(() => target), type: 'line',
+          borderColor: 'rgba(79,70,229,0.45)', borderDash: [4, 4],
+          pointRadius: 0, fill: false, borderWidth: 1.5
+        }
+      ]
+    },
+    options: kopts
+  });
+
+  // Exercise chart
+  destroyChart('exercise');
+  const exData = recent.map(r => r.kcal_burned ?? null);
+  const eopts = chartOptions();
+  eopts.scales.y.beginAtZero = true;
+  chartInstances.exercise = new Chart(document.getElementById('chart-exercise'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: exData, backgroundColor: '#4f46e5', borderRadius: 3 }]
+    },
+    options: eopts
+  });
+}
+
+
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+load();
+
+</script>
+
+</body>
+
+</html>
+
